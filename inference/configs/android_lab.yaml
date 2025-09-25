@@ -1,0 +1,44 @@
+default:
+  module: src.AndroidLabTask
+  parameters:
+    concurrency: 1
+    android_lab_config:
+      task:
+        class: Multi_ScreenshotMobileTask_AutoTest_v4_android_world
+        args:
+          system_prompt: AW_SYSTEM_PROMPT_THINKING
+          save_dir: "./logs/android_lab-test"
+          max_rounds: 50
+          request_interval: 3
+          mode: "in_app"
+          picture_round: 2
+          with_xml: true
+          is_relative_bbox: true
+      eval:
+        avd_name: Pixel_7_Pro_API_33
+        docker: true
+        version: "v4"
+    traces_dir: traces
+    data_size: 5000
+    image_max_pixels: 500000
+    judge_args:
+      judge_model: glm4
+      api_base: ''
+      api_key: ''
+      api_gateway_key: ''
+      api_gateway_base_url: ''
+      qwen_vl_base_url: ''
+      proxy_url: ''
+    env_options:
+      network_name: mobilerl_default
+      state_driver: redis
+      state_options:
+        connection:
+          host: 172.17.0.1
+
+android_lab-test:
+  parameters:
+    name: android_lab-test
+    split: test
+    yaml_path: config
+    env_type: android_lab_eval

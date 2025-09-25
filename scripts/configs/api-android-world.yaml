@@ -1,0 +1,27 @@
+agent:
+  name: RLAgent
+  args:
+    api_base: ""
+    api_key: "sk-"
+    temperature: 0.
+    max_new_tokens: 4096
+
+task:
+  class: Multi_ScreenshotMobileTask_AutoTest_v4_android_world
+  args:
+    save_dir: "./logs/android_world-test"
+    max_rounds: 50
+    request_interval: 3
+    picture_round: 2
+    with_xml: true
+    system_prompt: AW_SYSTEM_PROMPT_THINKING
+    is_relative_bbox: true
+
+eval:
+  docker_image_name: xuyifan0731/mobilerl-androidworld-eval:latest
+  adb_path: /path/to/adb
+  show_avd: false
+  version: "v4"
+  device_start_port: 14558
+  grpc_start_port: 18554
+  

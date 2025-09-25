@@ -1,0 +1,77 @@
+name: mobilerl
+
+services:
+
+  controller:
+    image: jingbh/agentrl-controller:latest
+    container_name: agentrl-controller
+    network_mode: host
+    command:
+      - controller
+
+  adb-server:
+    build:
+      target: adb-server
+      dockerfile: ./inference/Dockerfile
+      context: ..
+    container_name: adb-server
+    volumes:
+      - ./adbkey:/root/.android/adbkey:ro
+      - ./adbkey.pub:/root/.android/adbkey.pub:ro
+    network_mode: host
+    pid: host
+
+  port-allocator:
+    build:
+      target: port-allocator
+      dockerfile: ./inference/Dockerfile
+      context: ..
+    container_name: port-allocator
+    network_mode: host
+    pid: host
+    cap_add:
+      - SYS_PTRACE
+
+  android_lab-test:
+    build:
+      target: android-lab
+      dockerfile: ./inference/Dockerfile
+      context: ..
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traces:/app/traces
+    command: --controller http://172.17.0.1:5020/api android_lab-test
+    deploy:
+      mode: replicated
+      replicas: 1
+    depends_on:
+      - controller
+      - redis
+
+  android_world-reasoning-test-nolaunch:
+    build:
+      target: android-world
+      dockerfile: ./inference/Dockerfile
+      context: ..
+    environment:
+      - "EMULATOR_HOST=172.17.0.1"
+      - "ANDROID_WORLD_REASONING_TEST_NOLAUNCH_PARAMETERS_ANDROID_LAB_CONFIG_EVAL_ADB_PATH=/usr/local/bin/adb -H 172.17.0.1"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./adbkey:/root/.android/adbkey:ro
+      - ./adbkey.pub:/root/.android/adbkey.pub:ro
+      - ./traces:/app/traces
+    command: --controller http://172.17.0.1:5020/api android_world-reasoning-test-nolaunch
+    deploy:
+      mode: replicated
+      replicas: 1
+    depends_on:
+      - controller
+      - adb-server
+      - port-allocator
+      - redis
+
+  redis:
+    image: redis:7
+    container_name: redis
+    network_mode: host

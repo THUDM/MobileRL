@@ -1,0 +1,102 @@
+default:
+  module: src.AndroidWorldTask
+  parameters:
+    concurrency: 1
+    android_lab_config:
+      task:
+        class: Multi_ScreenshotMobileTask_AutoTest_v4_android_world
+        args:
+          save_dir: "./logs/android_world-test"
+          max_rounds: 50
+          request_interval: 3
+          mode: "in_app"
+          picture_round: 2
+          with_xml: true
+          system_prompt: AW_SYSTEM_PROMPT_wo_THINKING
+          is_relative_bbox: true
+      eval:
+        adb_path: adb
+        show_avd: false
+        version: "v4"
+    traces_dir: traces
+    data_size: 5000
+    image_max_pixels: 500000
+    port_allocator: http://172.17.0.1:5030
+    env_options:
+      network_name: host
+      state_driver: redis
+      state_options:
+        connection:
+          host: 172.17.0.1
+
+android_world-test:
+  parameters:
+    name: android_world-test
+    split: "test"
+
+android_world-reasoning-test:
+  parameters:
+    name: android_world-reasoning-test
+    split: "test"
+    android_lab_config:
+      task:
+        args:
+          system_prompt: AW_SYSTEM_PROMPT_THINKING
+
+android_world-reasoning-test-nolaunch:
+  parameters:
+    name: android_world-reasoning-test-nolaunch
+    split: "test"
+    android_lab_config:
+      task:
+        args:
+          system_prompt: AW_SYSTEM_PROMPT_THINKING
+          aw_launch: "no"
+
+android_world-reasoning-test-point:
+  parameters:
+    name: android_world-reasoning-test-point
+    split: "test"
+    android_lab_config:
+      task:
+        args:
+          system_prompt: NEW_THINK_SYS_PROMPT
+          picture_round: 1
+          with_xml: false
+          
+android_world-reasoning-test-point-abs:
+  parameters:
+    name: android_world-reasoning-test-point-abs
+    split: "test"
+    android_lab_config:
+      task:
+        args:
+          system_prompt: NEW_THINK_SYS_PROMPT
+          picture_round: 1
+          with_xml: false
+          is_relative_bbox: false
+
+android_world-reasoning-test-nolaunch-point:
+  parameters:
+    name: android_world-reasoning-test-nolaunch-point
+    split: "test"
+    android_lab_config:
+      task:
+        args:
+          system_prompt: NEW_THINK_SYS_PROMPT
+          aw_launch: "no"
+          picture_round: 1
+          with_xml: false
+
+android_world-reasoning-test-nolaunch-point-abs:
+  parameters:
+    name: android_world-reasoning-test-nolaunch-point-abs
+    split: "test"
+    android_lab_config:
+      task:
+        args:
+          system_prompt: NEW_THINK_SYS_PROMPT
+          aw_launch: "no"
+          picture_round: 1
+          with_xml: false
+          is_relative_bbox: false

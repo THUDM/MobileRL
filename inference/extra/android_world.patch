@@ -1,0 +1,796 @@
+diff --git a/.github/workflows/pytest.yml b/.github/workflows/pytest.yml
+index 93600b0..8dfb1a4 100644
+--- a/.github/workflows/pytest.yml
++++ b/.github/workflows/pytest.yml
+@@ -20,13 +20,6 @@ jobs:
+       with:
+         python-version: "3.11"
+ 
+-    # Install AndroidEnv
+-    - name: Install AndroidEnv
+-      run: |
+-        git clone https://github.com/google-deepmind/android_env
+-        cd android_env
+-        python setup.py install
+-
+     # Install AndroidWorld
+     - name: Install AndroidWorld
+       run: |
+@@ -48,11 +41,6 @@ jobs:
+       run: |
+         sudo apt-get update
+         sudo apt-get install -y fonts-dejavu fonts-liberation ttf-mscorefonts-installer
+-        # Workaround for dependency issues with protobuf and google-generativeai.
+-        # Update: 11/18/2024: This may need to be continually updated, when protobuf updates (from
+-        # AndroidEnv), i.e. if there is an errror: "Runtime version cannot be older than the linked
+-        # gencode version."
+-        pip install protobuf==5.29.0
+         pip --version
+         pip install pytest-xdist
+         pip install -e .[dev]
+diff --git a/README.md b/README.md
+index de6d206..e2ee371 100644
+--- a/README.md
++++ b/README.md
+@@ -11,9 +11,12 @@
+ 
+ ![Overview](assets/overview.png)
+ 
+-**AndroidWorld** is an environment for building and benchmarking autonomous computer control agents.
++**AndroidWorld** is an environment for building and benchmarking autonomous
++computer control agents.
+ 
+-It runs on a live Android emulator and contains a highly reproducible benchmark of 116 hand-crafted tasks across 20 apps, which are dynamically instantiated with randomly-generated parameters to create millions of unique task variations.
++It runs on a live Android emulator and contains a highly reproducible benchmark
++of 116 hand-crafted tasks across 20 apps, which are dynamically instantiated
++with randomly-generated parameters to create millions of unique task variations.
+ 
+ In addition to the built-in tasks, AndroidWorld also supports the popular web benchmark, MiniWoB++ from [Liu et al.](http://arxiv.org/abs/1802.08802).
+ 
+@@ -22,12 +25,14 @@ Key features of AndroidWorld include:
+ * 📝 **116 diverse tasks** across 20 real-world apps
+ * 🎲 **Dynamic task instantiation** for millions of unique variations
+ * 🏆 **Durable reward signals** for reliable evaluation
++* 🐳 **Experimental Docker Support** for simplified setup and consistent environments (as of 06/02/2025)
+ * 🌐 **Open environment** with access to millions of Android apps and websites
+ * 💾 **Lightweight footprint** (2 GB memory, 8 GB disk)
+ * 🔧 **Extensible design** to easily add new tasks and benchmarks
+ * 🖥️ **Integration with MiniWoB++** web-based tasks
+ 
+ See demo videos on our [website](https://google-research.github.io/android_world/).
++o
+ 
+ ## Installation
+ 
+@@ -37,7 +42,9 @@ See demo videos on our [website](https://google-research.github.io/android_world
+ 
+ 1. Launch the Android Emulator from the command line
+ 
+-    Launch the emulator from the command line, not using the Android Studio UI, with the `-grpc 8554` flag which is needed communication with accessibility forwarding app.
++    Launch the emulator from the command line, not using the Android Studio UI,
++    with the `-grpc 8554` flag which is needed communication with accessibility
++    forwarding app.
+ 
+     ```bash
+     # Typically it's located in ~/Android/Sdk/emulator/emulator or
+@@ -53,14 +60,6 @@ See demo videos on our [website](https://google-research.github.io/android_world
+     conda activate android_world
+     ```
+ 
+-1. Install the latest [AndroidEnv](https://github.com/google-deepmind/android_env):
+-
+-    ```python
+-    git clone https://github.com/google-deepmind/android_env.git
+-    cd android_env
+-    python setup.py install
+-    ```
+-
+ 1. Install AndroidWorld. *Note: Python 3.11 or above is required.*
+ 
+     ```python
+@@ -88,32 +87,44 @@ See demo videos on our [website](https://google-research.github.io/android_world
+     brew install ffmpeg
+     ```
+ 
+-### Known Issues
+-
+-**Protobuf Version Compatibility**
+-
+-While running `android_world`, if you encounter an error like:
++## Quickstart
+ 
++Run the `minimal_task_runner.py` script to see the basic mechanics of
++AndroidWorld components. It initializes the environment, sets up a task, and
++runs the default agent, M3A, on it.
+ ```bash
+-ImportError: cannot import name 'runtime_version' from 'google.protobuf'
++python minimal_task_runner.py --task=ContactsAddContact
+ ```
+ 
+-Fix by installing a specific protobuf version:
++If you don't specify a task, a random task will be selected. *NOTE: If you want
++to try open-source apps, i.e. not included with Android OS, please run
++`--perform_emulator_setup` in the script below.*
+ 
+-```bash
+-pip install protobuf==5.29.0
+-```
++## Docker Support (Experimental)
+ 
+-This is a temporary workaround for dependency conflicts between AndroidEnv and other packages. See [`.github/pytest.yml`](https://github.com/google-research/android_world/tree/main/.github/workflows) for the exact version that should be used to fix the issue.
++AndroidWorld now offers Docker support. This allows you to run the Android
++environment and server within a Docker container, which can simplify setup and
++ensure a consistent environment.
+ 
+-## Quickstart
++**Note:** This feature is experimental and has not been extensively tested.
+ 
+-Run the `minimal_task_runner.py` script to see the basic mechanics of AndroidWorld components. It initializes the environment, sets up a task, and runs the default agent, M3A, on it.
+-```bash
+-python minimal_task_runner.py --task=ContactsAddContact
+-```
++1.  **Build the Docker image:**
++
++    Navigate to the root directory of the `android_world` repository and run:
++    ```bash
++    docker build -t android_world:latest .
++    ```
++
++2.  **Run the Docker container:**
++    ```bash
++    docker run --privileged -p 5000:5000 -it android_world:latest
++    ```
++    This will start the Android emulator and the FastAPI server inside the
++    container. The server will be accessible on `http://localhost:5000`.
+ 
+-If you don't specify a task, a random task will be selected. *NOTE: If you want to try open-source apps, i.e. not included with Android OS, please run `--perform_emulator_setup` in the script below.*
++3.  **Interact with the environment:**
++    You can see the `scripts/run_suite_on_docker.py` script as an example client
++    to interact with the Android environment server running in Docker.
+ 
+ ## Run the benchmark
+ 
+@@ -128,13 +139,20 @@ python run.py \
+   --tasks=ContactsAddContact,ClockStopWatchRunning \  # Optional: Just run on a subset.
+ ```
+ 
+-The first time you run this script, you must install the necessary apps and set permissions by specifying `--perform_emulator_setup`. This is a one-time setup. It may take several minutes depending on the connection speed.
++The first time you run this script, you must install the necessary apps and set
++permissions by specifying `--perform_emulator_setup`. This is a one-time setup.
++It may take several minutes depending on the connection speed.
+ 
+-Above we specify the optional `--tasks` flag to run on a subset of tasks. Leave it empty to run on the entire AndroidWorld suite.
++Above we specify the optional `--tasks` flag to run on a subset of tasks. Leave
++it empty to run on the entire AndroidWorld suite.
+ 
+-The `n_task_combinations` argument specifies how many parameter permutations to use for each task. For example, for an SMS task, it would correspond to different phone number/message combinations for each run.
++The `n_task_combinations` argument specifies how many parameter permutations to
++use for each task. For example, for an SMS task, it would correspond to
++different phone number/message combinations for each run.
+ 
+-If a run fails part-way through, you can resume it by re-running the script with the `--checkpoint_dir` flag pointing to the output directory from the original run.
++If a run fails part-way through, you can resume it by re-running the script with
++the `--checkpoint_dir` flag pointing to the output directory from the original
++run.
+ 
+ ## Running MiniWoB++ tasks
+ 
+@@ -142,8 +160,8 @@ To run the MiniWoB++ web-based tasks in AndroidWorld, simply set
+ `--suite_family=miniwob` and `--perform_emulator_setup` in the command above.
+ 
+ A key advantage of running MiniWoB++ tasks is that common input elements are
+-rendered as native, commonly used Android UI widgets, rather than as HTML. Thus agents must learn to use universal
+-widgets such as time- and date-pickers:
++rendered as native, commonly used Android UI widgets, rather than as HTML. Thus
++agents must learn to use universal widgets such as time- and date-pickers:
+ 
+ <p align="center">
+    <img src="assets/miniwob.png" style="width:30%">
+diff --git a/android_world/agents/infer.py b/android_world/agents/infer.py
+index 218a0fe..62701cb 100644
+--- a/android_world/agents/infer.py
++++ b/android_world/agents/infer.py
+@@ -19,6 +19,7 @@ import base64
+ import io
+ import os
+ import time
++import json
+ from typing import Any, Optional
+ import google.generativeai as genai
+ from google.generativeai import types
+@@ -339,3 +340,106 @@ class Gpt4Wrapper(LlmWrapper, MultimodalLlmWrapper):
+         print('Error calling LLM, will retry soon...')
+         print(e)
+     return ERROR_CALLING_LLM, None, None
++
++class OpenAPIWrapper(LlmWrapper, MultimodalLlmWrapper):
++  """OpenAI GPT4 wrapper.
++
++  Attributes:
++    openai_api_key: The class gets the OpenAI api key either explicitly, or
++      through env variable in which case just leave this empty.
++    max_retry: Max number of retries when some error happens.
++    temperature: The temperature parameter in LLM to control result stability.
++    model: GPT model to use based on if it is multimodal.
++  """
++
++  RETRY_WAITING_SECONDS = 2
++
++  def __init__(
++      self,
++      model_name: str,
++      max_retry: int = 3,
++      temperature: float = 0.8,
++  ):
++    self.base_url = "https://one-api.glm.ai/v1/chat/completions"
++    self.api_key = "sk-iKDxVf6Uap69SsSUBbC642C48f8e44Ce861f2941CcE278Ab"
++
++   
++    if max_retry <= 0:
++      max_retry = 3
++      print('Max_retry must be positive. Reset it to 3')
++    #self.max_retry = min(max_retry, 5)
++    self.max_retry = 50
++    self.temperature = temperature
++    self.model = model_name
++
++  @classmethod
++  def encode_image(cls, image: np.ndarray) -> str:
++    return base64.b64encode(array_to_jpeg_bytes(image)).decode('utf-8')
++
++  def predict(
++      self,
++      text_prompt: str,
++  ) -> tuple[str, Optional[bool], Any]:
++    return self.predict_mm(text_prompt, [])
++
++  def predict_mm(
++      self, text_prompt: str, images: list[np.ndarray]
++  ) -> tuple[str, Optional[bool], Any]:
++    headers = {
++            'Content-Type': 'application/json',
++            'Authorization': f"Bearer {self.api_key}"
++        }
++
++    payload = {
++        'model': self.model,
++        'temperature': self.temperature,
++        'messages': [{
++            'role': 'user',
++            'content': [
++                {'type': 'text', 'text': text_prompt},
++            ],
++        }],
++        'max_tokens': 1000,
++    }
++
++    # Gpt-4v supports multiple images, just need to insert them in the content
++    # list.
++    for image in images:
++      payload['messages'][0]['content'].append({
++          'type': 'image_url',
++          'image_url': {
++              'url': f'data:image/jpeg;base64,{self.encode_image(image)}'
++          },
++      })
++
++    counter = self.max_retry
++    wait_seconds = self.RETRY_WAITING_SECONDS
++
++    payload = json.dumps(payload)
++    proxy = {
++        'http': 'socks5h://127.0.0.1:8889',
++        'https': 'socks5h://127.0.0.1:8889'
++        }
++    while counter > 0:
++      try:
++        response = requests.request("POST", self.base_url, headers=headers, data=payload, timeout=100, proxies=proxy)
++        if response.ok and 'choices' in response.json():
++          return (
++              response.json()['choices'][0]['message']['content'],
++              None,
++              response,
++          )
++        print(
++            'Error calling OpenAI API with error message: '
++            + response.json()['error']['message']
++        )
++        time.sleep(wait_seconds)
++        wait_seconds *= 2
++      except Exception as e:  # pylint: disable=broad-exception-caught
++        # Want to catch all exceptions happened during LLM calls.
++        time.sleep(wait_seconds)
++        wait_seconds *= 2
++        counter -= 1
++        print('Error calling LLM, will retry soon...')
++        print(e)
++    return ERROR_CALLING_LLM, None, None
+\ No newline at end of file
+diff --git a/android_world/env/adb_utils.py b/android_world/env/adb_utils.py
+index 799f214..6f7551e 100644
+--- a/android_world/env/adb_utils.py
++++ b/android_world/env/adb_utils.py
+@@ -495,6 +495,7 @@ def type_text(
+       logging.error('Failed to type word: %r', formatted)
+ 
+ 
++
+ def issue_generic_request(
+     args: Collection[str] | str,
+     env: env_interface.AndroidEnvInterface,
+@@ -525,6 +526,7 @@ def issue_generic_request(
+     args_str = ' '.join(args)
+   logging.info('Issuing generic adb request: %r', args_str)
+ 
++
+   response = env.execute_adb_call(
+       adb_pb2.AdbRequest(
+           generic=adb_pb2.AdbRequest.GenericRequest(args=args),
+diff --git a/android_world/env/android_world_controller.py b/android_world/env/android_world_controller.py
+index 62e3818..b37378e 100644
+--- a/android_world/env/android_world_controller.py
++++ b/android_world/env/android_world_controller.py
+@@ -17,6 +17,7 @@
+ import contextlib
+ import enum
+ import os
++import tempfile
+ import time
+ from typing import Any
+ from typing import cast
+@@ -92,6 +93,8 @@ def get_a11y_tree(
+   ] = None
+   for _ in range(max_retries):
+     try:
++      # import pdb
++      # pdb.set_trace()
+       forest = env.accumulate_new_extras()['accessibility_tree'][-1]  # pytype:disable=attribute-error
+       return forest
+     except KeyError:
+@@ -103,7 +106,6 @@ def get_a11y_tree(
+   return forest
+ 
+ 
+-_TASK_PATH = '/tmp/default.textproto'
+ DEFAULT_ADB_PATH = '~/Android/Sdk/platform-tools/adb'
+ 
+ 
+@@ -285,17 +287,16 @@ class AndroidWorldController(base_wrapper.BaseWrapper):
+ 
+ 
+ def _write_default_task_proto() -> str:
+-  with open(_TASK_PATH, 'w') as f:
++  fd, path = tempfile.mkstemp(suffix='.textproto', text=True)
++  with os.fdopen(fd, 'w') as f:
+     f.write("""\
+ id: "default"
+ 
+ name: "Default task for device control."
+ description: "Empty task"
+ 
+-max_episode_sec: 7200  # Prevent infinite episodes.
+-  """)
+-  return _TASK_PATH
+-
++max_episode_sec: 7200  # Prevent infinite episodes.""")
++  return path
+ 
+ def get_controller(
+     console_port: int = 5554,
+diff --git a/android_world/env/setup_device/apps.py b/android_world/env/setup_device/apps.py
+index a219c01..fb48c6f 100644
+--- a/android_world/env/setup_device/apps.py
++++ b/android_world/env/setup_device/apps.py
+@@ -37,7 +37,7 @@ APP_DATA = os.path.join(os.path.dirname(__file__), 'app_data')
+ 
+ def download_app_data(file_name: str) -> str:
+   """Downloads file from a GCS bucket, if not cached, and installs it."""
+-  cache_dir = "/tmp/android_world/app_data"
++  cache_dir = os.path.join(os.environ['TMPDIR'], "android_world/app_data")
+   remote_url = (
+       f"https://storage.googleapis.com/gresearch/android_world/{file_name}"
+   )
+diff --git a/android_world/suite_utils.py b/android_world/suite_utils.py
+index 8908c9f..561d084 100644
+--- a/android_world/suite_utils.py
++++ b/android_world/suite_utils.py
+@@ -21,7 +21,7 @@ import os
+ import random
+ import time
+ import traceback
+-from typing import Any, Callable, Type, TypeVar
++from typing import Any, Callable, Type
+ 
+ from android_env import env_interface
+ from android_world import checkpointer as checkpointer_lib
+@@ -40,7 +40,6 @@ import pandas as pd
+ _FIXED_SEED = 123
+ _TASK_TEMPLATE_COLUMN = 'task_template'
+ _TASK_PROMPT_COLUMN = 'task_prompt'
+-TaskEvalType = TypeVar('TaskEvalType', bound=task_eval.TaskEval)
+ 
+ 
+ class Suite(dict[str, list[task_eval.TaskEval]]):
+@@ -214,8 +213,8 @@ def _filter_tasks(
+ 
+ 
+ def _run_task(
+-    task: TaskEvalType,
+-    run_episode: Callable[[TaskEvalType], episode_runner.EpisodeResult],
++    task: task_eval.TaskEval,
++    run_episode: Callable[[task_eval.TaskEval], episode_runner.EpisodeResult],
+     env: interface.AsyncEnv,
+     demo_mode: bool,
+ ) -> dict[str, Any]:
+diff --git a/android_world/task_evals/information_retrieval/proto/state_pb2.py b/android_world/task_evals/information_retrieval/proto/state_pb2.py
+new file mode 100644
+index 0000000..f767ca5
+--- /dev/null
++++ b/android_world/task_evals/information_retrieval/proto/state_pb2.py
+@@ -0,0 +1,42 @@
++# -*- coding: utf-8 -*-
++# Generated by the protocol buffer compiler.  DO NOT EDIT!
++# source: android_world/task_evals/information_retrieval/proto/state.proto
++# Protobuf Python Version: 4.25.1
++"""Generated protocol buffer code."""
++from google.protobuf import descriptor as _descriptor
++from google.protobuf import descriptor_pool as _descriptor_pool
++from google.protobuf import symbol_database as _symbol_database
++from google.protobuf.internal import builder as _builder
++# @@protoc_insertion_point(imports)
++
++_sym_db = _symbol_database.Default()
++
++
++
++
++DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n@android_world/task_evals/information_retrieval/proto/state.proto\x12\x34\x61ndroid_world.task_evals.information_retrieval.proto\"\xe5\x02\n\x05State\x12P\n\x08\x63\x61lendar\x18\x01 \x01(\x0b\x32>.android_world.task_evals.information_retrieval.proto.Calendar\x12Q\n\ttasks_app\x18\x02 \x01(\x0b\x32>.android_world.task_evals.information_retrieval.proto.TasksApp\x12\x64\n\x13sports_activity_app\x18\x03 \x01(\x0b\x32G.android_world.task_evals.information_retrieval.proto.SportsActivityApp\x12Q\n\tnotes_app\x18\x04 \x01(\x0b\x32>.android_world.task_evals.information_retrieval.proto.NotesApp\"U\n\x08NotesApp\x12I\n\x05notes\x18\x01 \x03(\x0b\x32:.android_world.task_evals.information_retrieval.proto.Note\"\\\n\x04Note\x12\x0e\n\x06\x66older\x18\x01 \x01(\t\x12\r\n\x05title\x18\x02 \x01(\t\x12\x0c\n\x04\x62ody\x18\x03 \x01(\t\x12\x0f\n\x07is_todo\x18\x04 \x01(\t\x12\x16\n\x0etodo_completed\x18\x05 \x01(\t\"t\n\x11SportsActivityApp\x12_\n\x11sports_activities\x18\x01 \x03(\x0b\x32\x44.android_world.task_evals.information_retrieval.proto.SportsActivity\"\xc7\x01\n\x0eSportsActivity\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x10\n\x08\x63\x61tegory\x18\x03 \x01(\t\x12\x12\n\nstart_date\x18\x04 \x01(\t\x12\x12\n\nstart_time\x18\x05 \x01(\t\x12\x10\n\x08\x64uration\x18\x06 \x01(\t\x12\x16\n\x0etotal_distance\x18\x07 \x01(\t\x12\x16\n\x0e\x65levation_gain\x18\x08 \x01(\t\x12\x16\n\x0e\x65levation_loss\x18\t \x01(\t\"g\n\x08TasksApp\x12[\n\x0ftasks_app_tasks\x18\x01 \x03(\x0b\x32\x42.android_world.task_evals.information_retrieval.proto.TasksAppTask\"\xc6\x01\n\x0cTasksAppTask\x12\r\n\x05title\x18\x01 \x01(\t\x12\x12\n\nimportance\x18\x02 \x01(\t\x12\x10\n\x08\x64ue_date\x18\x03 \x01(\t\x12\x10\n\x08\x64ue_time\x18\x04 \x01(\t\x12\x17\n\x0fhide_until_date\x18\x05 \x01(\t\x12\x17\n\x0fhide_until_time\x18\x06 \x01(\t\x12\x16\n\x0e\x63ompleted_date\x18\x08 \x01(\t\x12\x16\n\x0e\x63ompleted_time\x18\t \x01(\t\x12\r\n\x05notes\x18\n \x01(\t\"i\n\x08\x43\x61lendar\x12\x10\n\x08\x61pp_name\x18\x02 \x01(\t\x12K\n\x06\x65vents\x18\x01 \x03(\x0b\x32;.android_world.task_evals.information_retrieval.proto.Event\"w\n\x05\x45vent\x12\x12\n\nstart_date\x18\x01 \x01(\t\x12\x12\n\nstart_time\x18\x02 \x01(\t\x12\x10\n\x08\x64uration\x18\x03 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x04 \x01(\t\x12\r\n\x05title\x18\x05 \x01(\t\x12\x10\n\x08location\x18\x06 \x01(\t')
++
++_globals = globals()
++_builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
++_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'android_world.task_evals.information_retrieval.proto.state_pb2', _globals)
++if _descriptor._USE_C_DESCRIPTORS == False:
++  DESCRIPTOR._options = None
++  _globals['_STATE']._serialized_start=123
++  _globals['_STATE']._serialized_end=480
++  _globals['_NOTESAPP']._serialized_start=482
++  _globals['_NOTESAPP']._serialized_end=567
++  _globals['_NOTE']._serialized_start=569
++  _globals['_NOTE']._serialized_end=661
++  _globals['_SPORTSACTIVITYAPP']._serialized_start=663
++  _globals['_SPORTSACTIVITYAPP']._serialized_end=779
++  _globals['_SPORTSACTIVITY']._serialized_start=782
++  _globals['_SPORTSACTIVITY']._serialized_end=981
++  _globals['_TASKSAPP']._serialized_start=983
++  _globals['_TASKSAPP']._serialized_end=1086
++  _globals['_TASKSAPPTASK']._serialized_start=1089
++  _globals['_TASKSAPPTASK']._serialized_end=1287
++  _globals['_CALENDAR']._serialized_start=1289
++  _globals['_CALENDAR']._serialized_end=1394
++  _globals['_EVENT']._serialized_start=1396
++  _globals['_EVENT']._serialized_end=1515
++# @@protoc_insertion_point(module_scope)
+diff --git a/android_world/task_evals/information_retrieval/proto/state_pb2_grpc.py b/android_world/task_evals/information_retrieval/proto/state_pb2_grpc.py
+new file mode 100644
+index 0000000..2daafff
+--- /dev/null
++++ b/android_world/task_evals/information_retrieval/proto/state_pb2_grpc.py
+@@ -0,0 +1,4 @@
++# Generated by the gRPC Python protocol compiler plugin. DO NOT EDIT!
++"""Client and server classes corresponding to protobuf-defined services."""
++import grpc
++
+diff --git a/android_world/task_evals/information_retrieval/proto/task_pb2.py b/android_world/task_evals/information_retrieval/proto/task_pb2.py
+new file mode 100644
+index 0000000..bc70bbc
+--- /dev/null
++++ b/android_world/task_evals/information_retrieval/proto/task_pb2.py
+@@ -0,0 +1,47 @@
++# -*- coding: utf-8 -*-
++# Generated by the protocol buffer compiler.  DO NOT EDIT!
++# source: android_world/task_evals/information_retrieval/proto/task.proto
++# Protobuf Python Version: 4.25.1
++"""Generated protocol buffer code."""
++from google.protobuf import descriptor as _descriptor
++from google.protobuf import descriptor_pool as _descriptor_pool
++from google.protobuf import symbol_database as _symbol_database
++from google.protobuf.internal import builder as _builder
++# @@protoc_insertion_point(imports)
++
++_sym_db = _symbol_database.Default()
++
++
++from android_world.task_evals.information_retrieval.proto import state_pb2 as android__world_dot_task__evals_dot_information__retrieval_dot_proto_dot_state__pb2
++
++
++DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n?android_world/task_evals/information_retrieval/proto/task.proto\x12\x34\x61ndroid_world.task_evals.information_retrieval.proto\x1a@android_world/task_evals/information_retrieval/proto/state.proto\"R\n\x05Tasks\x12I\n\x05tasks\x18\x01 \x03(\x0b\x32:.android_world.task_evals.information_retrieval.proto.Task\"\xcd\x02\n\x04Task\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x12\n\ncomplexity\x18\x06 \x01(\x05\x12\x0e\n\x06prompt\x18\x02 \x01(\t\x12U\n\x0btask_params\x18\x03 \x03(\x0b\x32@.android_world.task_evals.information_retrieval.proto.TaskParams\x12[\n\x0erelevant_state\x18\x04 \x01(\x0b\x32\x43.android_world.task_evals.information_retrieval.proto.RelevantState\x12_\n\x10success_criteria\x18\x05 \x01(\x0b\x32\x45.android_world.task_evals.information_retrieval.proto.SuccessCriteria\"3\n\nTaskParams\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x17\n\x0fpossible_values\x18\x02 \x03(\t\"j\n\x0fSuccessCriteria\x12W\n\x0c\x65xpectations\x18\x01 \x03(\x0b\x32\x41.android_world.task_evals.information_retrieval.proto.Expectation\"\xd7\x01\n\x13\x46ieldTransformation\x12\x66\n\toperation\x18\x01 \x01(\x0e\x32S.android_world.task_evals.information_retrieval.proto.FieldTransformation.Operation\x12\x12\n\nfield_name\x18\x02 \x01(\t\"D\n\tOperation\x12\x15\n\x11OPERATION_UNKNOWN\x10\x00\x12\x07\n\x03SUM\x10\x01\x12\t\n\x05\x43OUNT\x10\x02\x12\x0c\n\x08IDENTITY\x10\x03\"\x82\x03\n\x0b\x45xpectation\x12i\n\x14\x66ield_transformation\x18\x01 \x01(\x0b\x32I.android_world.task_evals.information_retrieval.proto.FieldTransformationH\x00\x12\x18\n\x0e\x65xpected_value\x18\x02 \x01(\tH\x00\x12_\n\nmatch_type\x18\x03 \x01(\x0e\x32K.android_world.task_evals.information_retrieval.proto.Expectation.MatchType\x12\x11\n\ttolerance\x18\x04 \x01(\x02\"g\n\tMatchType\x12\x16\n\x12MATCH_TYPE_UNKNOWN\x10\x00\x12\x10\n\x0cSTRING_MATCH\x10\x01\x12\x10\n\x0cNUMBER_MATCH\x10\x02\x12\x0e\n\nDATE_MATCH\x10\x03\x12\x0e\n\nTIME_MATCH\x10\x04\x42\x11\n\x0f\x65xpected_answer\"\xc3\x01\n\rRelevantState\x12J\n\x05state\x18\x01 \x01(\x0b\x32;.android_world.task_evals.information_retrieval.proto.State\x12\x66\n\x14\x65xclusion_conditions\x18\x02 \x03(\x0b\x32H.android_world.task_evals.information_retrieval.proto.ExclusionCondition\"\xb4\x02\n\x12\x45xclusionCondition\x12\x65\n\toperation\x18\x01 \x01(\x0e\x32R.android_world.task_evals.information_retrieval.proto.ExclusionCondition.Operation\x12\r\n\x05\x66ield\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"\x98\x01\n\tOperation\x12\x15\n\x11OPERATION_UNKNOWN\x10\x00\x12\x0c\n\x08\x45QUAL_TO\x10\x01\x12\x0c\n\x08\x43ONTAINS\x10\x02\x12\x10\n\x0cGREATER_THAN\x10\x03\x12\r\n\tLESS_THAN\x10\x04\x12\x1c\n\x18GREATER_THAN_OR_EQUAL_TO\x10\x05\x12\x19\n\x15LESS_THAN_OR_EQUAL_TO\x10\x06')
++
++_globals = globals()
++_builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
++_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'android_world.task_evals.information_retrieval.proto.task_pb2', _globals)
++if _descriptor._USE_C_DESCRIPTORS == False:
++  DESCRIPTOR._options = None
++  _globals['_TASKS']._serialized_start=187
++  _globals['_TASKS']._serialized_end=269
++  _globals['_TASK']._serialized_start=272
++  _globals['_TASK']._serialized_end=605
++  _globals['_TASKPARAMS']._serialized_start=607
++  _globals['_TASKPARAMS']._serialized_end=658
++  _globals['_SUCCESSCRITERIA']._serialized_start=660
++  _globals['_SUCCESSCRITERIA']._serialized_end=766
++  _globals['_FIELDTRANSFORMATION']._serialized_start=769
++  _globals['_FIELDTRANSFORMATION']._serialized_end=984
++  _globals['_FIELDTRANSFORMATION_OPERATION']._serialized_start=916
++  _globals['_FIELDTRANSFORMATION_OPERATION']._serialized_end=984
++  _globals['_EXPECTATION']._serialized_start=987
++  _globals['_EXPECTATION']._serialized_end=1373
++  _globals['_EXPECTATION_MATCHTYPE']._serialized_start=1251
++  _globals['_EXPECTATION_MATCHTYPE']._serialized_end=1354
++  _globals['_RELEVANTSTATE']._serialized_start=1376
++  _globals['_RELEVANTSTATE']._serialized_end=1571
++  _globals['_EXCLUSIONCONDITION']._serialized_start=1574
++  _globals['_EXCLUSIONCONDITION']._serialized_end=1882
++  _globals['_EXCLUSIONCONDITION_OPERATION']._serialized_start=1730
++  _globals['_EXCLUSIONCONDITION_OPERATION']._serialized_end=1882
++# @@protoc_insertion_point(module_scope)
+diff --git a/android_world/task_evals/information_retrieval/proto/task_pb2_grpc.py b/android_world/task_evals/information_retrieval/proto/task_pb2_grpc.py
+new file mode 100644
+index 0000000..2daafff
+--- /dev/null
++++ b/android_world/task_evals/information_retrieval/proto/task_pb2_grpc.py
+@@ -0,0 +1,4 @@
++# Generated by the gRPC Python protocol compiler plugin. DO NOT EDIT!
++"""Client and server classes corresponding to protobuf-defined services."""
++import grpc
++
+diff --git a/android_world/task_evals/single/browser.py b/android_world/task_evals/single/browser.py
+index 201edde..c84ea8d 100644
+--- a/android_world/task_evals/single/browser.py
++++ b/android_world/task_evals/single/browser.py
+@@ -16,6 +16,7 @@
+ 
+ import os
+ import random
++import tempfile
+ import time
+ from typing import Any
+ from android_world.env import adb_utils
+@@ -72,12 +73,15 @@ class BrowserTask(task_eval.TaskEval):
+     )
+ 
+     html = self.HTML.replace('%%SEED%%', str(self.params['browser_task_seed']))
+-    with open('/tmp/task.html', 'w') as f:
++    task_html_fd, task_html_path = tempfile.mkstemp('.html', 'task', text=True)
++    with open(task_html_fd, 'w') as f:
+       f.write(html)
+     file_utils.copy_data_to_device(
+-        '/tmp/task.html',
+-        os.path.join(device_constants.DOWNLOAD_DATA, 'task.html'),
+-        env.controller,
++      task_html_path,
++      os.path.join(
++        device_constants.DOWNLOAD_DATA, 'task.html'
++      ),
++      env.controller,
+     )
+ 
+   def tear_down(self, env: interface.AsyncEnv):
+diff --git a/android_world/task_evals/single/markor.py b/android_world/task_evals/single/markor.py
+index db30dd3..862e910 100644
+--- a/android_world/task_evals/single/markor.py
++++ b/android_world/task_evals/single/markor.py
+@@ -840,9 +840,9 @@ class MarkorTranscribeReceipt(task_eval.TaskEval):
+     """Initializes the task for creating a receipt markdown file."""
+     super().initialize_task(env)
+     self.create_file_task.initialize_task(env)
+-    self.img.save("/tmp/receipt.png")
++    self.img.save(os.path.join(os.environ['TMPDIR'], "receipt.png"))
+     file_utils.copy_data_to_device(
+-        "/tmp/receipt.png",
++        os.path.join(os.environ['TMPDIR'], "receipt.png"),
+         device_constants.GALLERY_DATA,
+         env.controller,
+     )
+diff --git a/android_world/task_evals/single/simple_gallery_pro.py b/android_world/task_evals/single/simple_gallery_pro.py
+index 9461c56..d08e3f4 100644
+--- a/android_world/task_evals/single/simple_gallery_pro.py
++++ b/android_world/task_evals/single/simple_gallery_pro.py
+@@ -43,7 +43,7 @@ class SaveCopyOfReceiptTaskEval(task_eval.TaskEval):
+     super().initialize_task(env)
+     user_data_generation.clear_device_storage(env)
+     receipt_image = self.params["receipt_image"]
+-    temp_storage_location = os.path.join("/tmp/", self.params["file_name"])
++    temp_storage_location = os.path.join(os.environ['TMPDIR'], self.params["file_name"])
+     receipt_image.save(temp_storage_location)
+     file_utils.copy_data_to_device(
+         temp_storage_location,
+diff --git a/android_world/task_evals/task_eval.py b/android_world/task_evals/task_eval.py
+index 4a5f1bf..e8663b2 100644
+--- a/android_world/task_evals/task_eval.py
++++ b/android_world/task_evals/task_eval.py
+@@ -136,8 +136,10 @@ class TaskEval(abc.ABC):
+     self.initialize_device_time(env)
+     self._initialize_apps(env)
+     logging.info("Initializing %s", self.name)
++    print(f"Initializing {self.name}")
+     if self.initialized:
+-      raise RuntimeError(f"{self.name}.initialize_task() is already called.")
++      #raise RuntimeError(f"{self.name}.initialize_task() is already called.")
++      print(f"{self.name}.initialize_task() is already called.")
+     self.initialized = True
+ 
+     # Set random seed for so that any random params initialized here are
+diff --git a/android_world/task_evals/utils/sqlite_utils.py b/android_world/task_evals/utils/sqlite_utils.py
+index 9dfd42c..93741d7 100644
+--- a/android_world/task_evals/utils/sqlite_utils.py
++++ b/android_world/task_evals/utils/sqlite_utils.py
+@@ -160,8 +160,11 @@ def delete_all_rows_from_table(
+     conn = sqlite3.connect(local_db_path)
+     cursor = conn.cursor()
+     delete_command = f"DELETE FROM {table_name}"
+-    cursor.execute(delete_command)
+-    conn.commit()
++    try:  
++      cursor.execute(delete_command)
++      conn.commit()
++    except Exception as e:
++      print(e)
+     conn.close()
+     env.controller.push_file(local_db_path, remote_db_file_path, timeout_sec)
+     adb_utils.close_app(
+diff --git a/android_world/task_evals/utils/user_data_generation.py b/android_world/task_evals/utils/user_data_generation.py
+index 9a98925..b5090cf 100644
+--- a/android_world/task_evals/utils/user_data_generation.py
++++ b/android_world/task_evals/utils/user_data_generation.py
+@@ -18,6 +18,7 @@ import datetime
+ import os
+ import random
+ import re
++import uuid
+ import string
+ from android_env import env_interface
+ from android_world.env import adb_utils
+@@ -30,6 +31,7 @@ from PIL import Image
+ from PIL import ImageDraw
+ from PIL import ImageFont
+ import pydub
++import time
+ 
+ _FONT_PATHS = [
+     "arial.ttf",
+@@ -54,7 +56,7 @@ def get_font_path() -> str:
+     raise RuntimeError("No suitable font found.") from exc
+ 
+ 
+-_TMP = "/tmp"
++_TMP = os.environ['TMPDIR']
+ 
+ 
+ def generate_random_string(length: int) -> str:
+@@ -164,8 +166,16 @@ def write_to_gallery(
+   """
+ 
+   image = _draw_text(data)
+-  temp_storage_location = os.path.join(_TMP, file_name)
++  uuid_num = str(uuid.uuid4())
++  temp_storage_location = os.path.join(_TMP, f"{uuid_num}_{file_name}")
+   image.save(temp_storage_location)
++  # 等待文件生成，最长60秒
++  start_time = time.time()
++  while not os.path.exists(temp_storage_location):
++    print("waiting for file to be created,", temp_storage_location)
++    if time.time() - start_time > 60:
++      raise RuntimeError(f"File {temp_storage_location} was not created within 60 seconds.")
++    time.sleep(0.5)
+   file_utils.copy_data_to_device(
+       temp_storage_location,
+       device_constants.GALLERY_DATA,
+@@ -179,7 +189,9 @@ def _copy_data_to_device(
+     data: str, file_name: str, location: str, env: interface.AsyncEnv
+ ):
+   """Copies data to device by first writing locally, then copying.."""
+-  temp_storage_location = os.path.join(_TMP, file_name)
++  
++  uuid_num = str(uuid.uuid4())
++  temp_storage_location = os.path.join(_TMP, f"{uuid_num}_{file_name}")
+   with open(temp_storage_location, "w") as temp_file:
+     temp_file.write(data)
+ 
+@@ -313,6 +325,14 @@ def _create_test_mp3(
+   _ = tone.export(
+       file_path, format="mp3", tags={"artist": artist, "title": title}
+   )
++  start_time = time.time()
++  while True:
++    print("waiting for mp3 file to be created,", file_path)
++    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
++      break
++    if time.time() - start_time > 60:
++      raise RuntimeError("Timed out waiting for mp3 file to be created.")
++    time.sleep(0.5)
+   return file_path
+ 
+ 
+@@ -332,7 +352,8 @@ def write_mp3_file_to_device(
+     title: The title of the song.
+     duration_milliseconds: The duration of the MP3 file in milliseconds.
+   """
+-  local = os.path.join(_TMP, os.path.basename(remote_path))
++  uuid_num = str(uuid.uuid4())
++  local = os.path.join(_TMP, f"{uuid_num}_{os.path.basename(remote_path)}")
+   _create_test_mp3(
+       local,
+       artist=artist,
+@@ -347,6 +368,7 @@ def write_mp3_file_to_device(
+   os.remove(local)
+ 
+ 
++
+ def dict_to_notes(input_dict: dict[str, tuple[str, str]]) -> str:
+   """Converts a dictionary of apartment details to a string for user notes.
+ 
+diff --git a/android_world/utils/file_utils.py b/android_world/utils/file_utils.py
+index d442fc0..f64873b 100644
+--- a/android_world/utils/file_utils.py
++++ b/android_world/utils/file_utils.py
+@@ -34,7 +34,7 @@ from android_world.utils import fuzzy_match_lib
+ 
+ 
+ # Local temporary location for files copied to or from the device.
+-TMP_LOCAL_LOCATION = "/tmp/android_world"
++TMP_LOCAL_LOCATION = os.path.join(os.environ['TMPDIR'], "android_world")
+ 
+ 
+ @dataclasses.dataclass(frozen=True)
+diff --git a/minimal_task_runner.py b/minimal_task_runner.py
+index 9a59e1f..08ab731 100644
+--- a/minimal_task_runner.py
++++ b/minimal_task_runner.py
+@@ -1,4 +1,4 @@
+-# Copyright 2024 The android_world Authors.
++# Copyright 2025 The android_world Authors.
+ #
+ # Licensed under the Apache License, Version 2.0 (the "License");
+ # you may not use this file except in compliance with the License.
+@@ -108,7 +108,7 @@ def _main() -> None:
+ 
+   print('Goal: ' + str(task.goal))
+   is_done = False
+-  for _ in range(task.complexity * 10):
++  for _ in range(int(task.complexity * 10)):
+     response = agent.step(task.goal)
+     if response.done:
+       is_done = True
+diff --git a/requirements.txt b/requirements.txt
+index 8aa2be6..e92aa40 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1,7 +1,7 @@
+ absl-py==2.1.0
+ dm_env==1.6
+ fuzzywuzzy==0.18.0
+-google-generativeai==0.5.1
++google-generativeai
+ grpcio-tools
+ immutabledict==2.0.0
+ IPython
+diff --git a/run.py b/run.py
+index 430debe..a9b8ef9 100644
+--- a/run.py
++++ b/run.py
+@@ -1,4 +1,4 @@
+-# Copyright 2024 The android_world Authors.
++# Copyright 2025 The android_world Authors.
+ #
+ # Licensed under the Apache License, Version 2.0 (the "License");
+ # you may not use this file except in compliance with the License.
+diff --git a/setup.py b/setup.py
+index 8cd78bf..5576a96 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1,4 +1,4 @@
+-# Copyright 2024 The android_world Authors.
++# Copyright 2025 The android_world Authors.
+ #
+ # Licensed under the Apache License, Version 2.0 (the "License");
+ # you may not use this file except in compliance with the License.
