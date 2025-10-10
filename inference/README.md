@@ -1,6 +1,6 @@
 # MobileRL Evaluation Framework
 
-This directory contains the [AgentRL](https://github.com/THUDM/AgentRL-Env)-based evaluation framework for MobileRL
+This directory contains the [AgentRL](https://github.com/THUDM/AgentRL)-based evaluation framework for MobileRL
 that integrates the [Android Lab](https://github.com/THUDM/Android-Lab) test set
 and [Android World](https://github.com/google-research/android_world) test set.
 
@@ -104,14 +104,14 @@ See the detailed hardware requirements and how to configure concurrency below.
 
 ### Deployment Details
 
-The inference framework is based on [AgentRL](https://github.com/THUDM/AgentRL-Env),
+The inference framework is based on [AgentRL](https://github.com/THUDM/AgentRL),
 which consists of a controller and multiple task workers.
 
 #### AgentRL Controller
 
 You may run the AgentRL controller in a docker container or directly on the host machine.
 
-To run the controller directly on the host machine, please refer to the [AgentRL README](https://github.com/THUDM/AgentRL-Env/blob/main/README.md#prebuilt-binaries).
+To run the controller directly on the host machine, please refer to the [AgentRL documentation](https://github.com/THUDM/AgentRL/blob/main/docs/deployment.md).
 
 To run the controller in a docker container:
 
