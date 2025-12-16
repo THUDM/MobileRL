@@ -36,9 +36,22 @@ default:
         connection:
           host: 172.17.0.1
 
-android_lab-test:
+android_lab-test-bbox:
   parameters:
-    name: android_lab-test
+    name: android_lab-test-bbox
     split: test
     yaml_path: config
     env_type: android_lab_eval
+
+android_lab-test-coordinate:
+  parameters:
+    name: android_lab-test-coordinate
+    split: test
+    yaml_path: config
+    env_type: android_lab_eval
+    android_lab_config:
+      task:
+        args:
+          system_prompt: POINT_THINK_SYSTEM_PROMPT
+          picture_round: 1
+          with_xml: false

@@ -29,21 +29,7 @@ default:
         connection:
           host: 172.17.0.1
 
-android_world-test:
-  parameters:
-    name: android_world-test
-    split: "test"
-
-android_world-reasoning-test:
-  parameters:
-    name: android_world-reasoning-test
-    split: "test"
-    android_lab_config:
-      task:
-        args:
-          system_prompt: AW_SYSTEM_PROMPT_THINKING
-
-android_world-reasoning-test-nolaunch:
+android_world-reasoning-test-nolaunch-bbox:
   parameters:
     name: android_world-reasoning-test-nolaunch
     split: "test"
@@ -53,50 +39,14 @@ android_world-reasoning-test-nolaunch:
           system_prompt: AW_SYSTEM_PROMPT_THINKING
           aw_launch: "no"
 
-android_world-reasoning-test-point:
+android_world-reasoning-test-nolaunch-coordinate:
   parameters:
-    name: android_world-reasoning-test-point
+    name: android_world-reasoning-test-nolaunch-coordinate
     split: "test"
     android_lab_config:
       task:
         args:
-          system_prompt: NEW_THINK_SYS_PROMPT
-          picture_round: 1
-          with_xml: false
-          
-android_world-reasoning-test-point-abs:
-  parameters:
-    name: android_world-reasoning-test-point-abs
-    split: "test"
-    android_lab_config:
-      task:
-        args:
-          system_prompt: NEW_THINK_SYS_PROMPT
-          picture_round: 1
-          with_xml: false
-          is_relative_bbox: false
-
-android_world-reasoning-test-nolaunch-point:
-  parameters:
-    name: android_world-reasoning-test-nolaunch-point
-    split: "test"
-    android_lab_config:
-      task:
-        args:
-          system_prompt: NEW_THINK_SYS_PROMPT
+          system_prompt: POINT_THINK_SYSTEM_PROMPT
           aw_launch: "no"
           picture_round: 1
           with_xml: false
-
-android_world-reasoning-test-nolaunch-point-abs:
-  parameters:
-    name: android_world-reasoning-test-nolaunch-point-abs
-    split: "test"
-    android_lab_config:
-      task:
-        args:
-          system_prompt: NEW_THINK_SYS_PROMPT
-          aw_launch: "no"
-          picture_round: 1
-          with_xml: false
-          is_relative_bbox: false

@@ -170,15 +170,15 @@ The full configuration file for Android Lab and Android World task workers can b
 If you are running locally as Python scripts, you may directly modify the config files and pass the file name as an argument:
 
 ```shell
-python -m agentrl.worker --config configs/android_lab.yaml --controller http://localhost:5020/api android_lab-test
+python -m agentrl.worker --config configs/android_lab.yaml --controller http://localhost:5020/api android_lab-test-bbox
 ```
 
 If you are running the task worker as Docker containers, it is possible to override config entries with environment variables.
 
 The environment variables should be named as the configuration keys in uppercase, replacing dots, dashes with underscores.
 
-For example, to override the `name` parameter of the `android_lab-test` task,
-you can set the environment variable `ANDROID_LAB_TEST_PARAMETERS_NAME` to the desired value.
+For example, to override the `name` parameter of the `android_lab-test-bbox` task,
+you can set the environment variable `ANDROID_LAB_TEST_BBOX_PARAMETERS_NAME` to the desired value.
 
 There's also a display of this feature in `android_world` task in the provided `docker-compose.yml` file.
 
@@ -191,7 +191,7 @@ Please note that you may need to install the correct version of **sglang** to ex
 ```shell
 # for sglang
 python -m scripts.eval_deployment \
-  "android_lab-test" \
+  "android_lab-test-bbox" \
   -m /path/to/your/model \
   -c http://localhost:5020/api \
   -r 0,10 \
@@ -204,13 +204,23 @@ python -m scripts.eval_deployment \
 # we only provide an example with the model name and message.
 export OPENAI_API_KEY=sk-xxx
 python -m scripts.eval_deployment \
-  "android_lab-test" \
+  "android_lab-test-bbox" \
   -m /path/to/your/model \
   -c http://localhost:5020/api \
   -r 0,10 \
   -o RUN_OUTPUT_DIR \
   --store-name SAVE_NAME \
   --inference-backend openai 
+  
+ # for zai-org/AutoGLM-Phone-9B-Multilingual testing
+ python -m scripts.eval_deployment \
+  "android_lab-test-coordinate" \
+  -m /path/to/your/model \
+  -c http://localhost:5020/api \
+  -r 0,10 \
+  -o RUN_OUTPUT_DIR \
+  --store-name SAVE_NAME \
+  --inference-backend sgl 
 ```
 
 ## Special Note for Android World

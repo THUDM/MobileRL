@@ -32,7 +32,7 @@ services:
     cap_add:
       - SYS_PTRACE
 
-  android_lab-test:
+  android_lab-test-bbox:
     build:
       target: android-lab
       dockerfile: ./inference/Dockerfile
@@ -40,7 +40,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./traces:/app/traces
-    command: --controller http://172.17.0.1:5020/api android_lab-test
+    command: --controller http://172.17.0.1:5020/api android_lab-test-bbox
     deploy:
       mode: replicated
       replicas: 1
@@ -48,7 +48,23 @@ services:
       - controller
       - redis
 
-  android_world-reasoning-test-nolaunch:
+  android_lab-test-coordinate:
+    build:
+      target: android-lab
+      dockerfile: ./inference/Dockerfile
+      context: ..
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traces:/app/traces
+    command: --controller http://172.17.0.1:5020/api android_lab-test-coordinate
+    deploy:
+      mode: replicated
+      replicas: 1
+    depends_on:
+      - controller
+      - redis
+
+  android_world-reasoning-test-nolaunch-bbox:
     build:
       target: android-world
       dockerfile: ./inference/Dockerfile
@@ -61,7 +77,30 @@ services:
       - ./adbkey:/root/.android/adbkey:ro
       - ./adbkey.pub:/root/.android/adbkey.pub:ro
       - ./traces:/app/traces
-    command: --controller http://172.17.0.1:5020/api android_world-reasoning-test-nolaunch
+    command: --controller http://172.17.0.1:5020/api android_world-reasoning-test-nolaunch-bbox
+    deploy:
+      mode: replicated
+      replicas: 1
+    depends_on:
+      - controller
+      - adb-server
+      - port-allocator
+      - redis
+
+  android_world-reasoning-test-nolaunch-coordinate:
+    build:
+      target: android-world
+      dockerfile: ./inference/Dockerfile
+      context: ..
+    environment:
+      - "EMULATOR_HOST=172.17.0.1"
+      - "ANDROID_WORLD_REASONING_TEST_NOLAUNCH_PARAMETERS_ANDROID_LAB_CONFIG_EVAL_ADB_PATH=/usr/local/bin/adb -H 172.17.0.1"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./adbkey:/root/.android/adbkey:ro
+      - ./adbkey.pub:/root/.android/adbkey.pub:ro
+      - ./traces:/app/traces
+    command: --controller http://172.17.0.1:5020/api android_world-reasoning-test-nolaunch-coordinate
     deploy:
       mode: replicated
       replicas: 1

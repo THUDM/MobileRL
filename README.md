@@ -12,6 +12,7 @@
 
 ## Open-Source Roadmap
 - [x] **Evaluation framework** 
+- [x] **Support zai-org/AutoGLM-Phone-9B-Multilingual**
 - [ ] **MobileRL-9B checkpoint** —  **Will be open-sourced soon upon legal approval.**
 
 
@@ -54,6 +55,19 @@ We support two modes of usage:
 * **Docker-based Deployment with AgentRL** – Provides a consistent, containerized environment for convenient deployment.
 
 For detailed usage instructions, please refer to [inference/README.md](inference/README.md).
+
+We now support testing **zai-org/AutoGLM-Phone-9B-Multilingual**.
+
+Please download the model from:
+https://huggingface.co/zai-org/AutoGLM-Phone-9B-Multilingual
+
+For evaluation, use the `*-coordinate` setting. This setting predicts actions in **coordinate format**, rather than **bounding box (bbox) format** as used in MobileRL. 
+
+**Important Notice:**  
+This framework supports testing **only the English version of AutoGLM**.  
+Please do **not** use non-multilingual versions, as the **system prompts differ** between versions. 
+
+
 
 
 

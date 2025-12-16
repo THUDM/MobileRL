@@ -454,7 +454,12 @@ class TextOnlyExecutor_android_world(TextOnlyExecutor_v4):
         elif action == "Type":
             self.type(**kwargs)
         elif action == "Swipe":
-            self.swipe(element, predict_element, **kwargs)
+            if kwargs.get('start') is not None and kwargs.get('end') is not None:
+                self.controller.swipe_precise(kwargs.get('start'), kwargs.get('end'))
+                self.current_return = {"operation": "do", "action": 'SwipePrecise',
+                               "kwargs": {"start": kwargs.get('start'), "end": kwargs.get('end')}}
+            else:
+                self.swipe(element, predict_element, **kwargs)
         elif action == "Enter":
             self.press_enter()
         elif action == "Home":

@@ -277,7 +277,7 @@ class UIXMLTree:
             node.attrib['description'] += ' selected'
         node.attrib['description'] += ';'
 
-
+        # TODO
         # func-desc
         if node.attrib['func-desc'] != "":
             node.attrib['description'] += " " + node.attrib['func-desc'] + ";"
@@ -508,10 +508,12 @@ class UIXMLTree:
                     node.attrib['name'] = node.attrib['class'].split('.')[-1]
 
             # pre class
+            # TODO
             if node.attrib['class'] != "":
                 node.attrib['class'] = node.attrib['class'].split('.')[-1]
 
             # pre resource-id
+            # TODO
             # if node.attrib['resource-id'] != "":
             #     if ":id/" in node.attrib['resource-id']:
             #         resrc = node.attrib['resource-id']
