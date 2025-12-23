@@ -5,15 +5,18 @@
 
 
 <p align="center">
-   <a href="https://arxiv.org/abs/2509.18119" target="_blank">📃 Paper</a>
+  <a href="https://arxiv.org/abs/2509.18119" target="_blank">📃 Paper</a>
+  &nbsp;|&nbsp;
+  <a href="https://huggingface.co/xuyifan/MobileRL-9B" target="_blank">🤗 Model</a>
 </p>
+
 
 
 
 ## Open-Source Roadmap
 - [x] **Evaluation framework** 
 - [x] **Support zai-org/AutoGLM-Phone-9B-Multilingual**
-- [ ] **MobileRL-9B checkpoint** —  **Will be open-sourced soon upon legal approval.**
+- [x] **MobileRL-9B checkpoint** 
 
 
 ## Quick Start Guide
